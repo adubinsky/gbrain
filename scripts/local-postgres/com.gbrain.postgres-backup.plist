@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Copy to ~/Library/LaunchAgents/com.gbrain.postgres-backup.plist
+  Replace BOTH /ABSOLUTE/PATH placeholders, then:
+    launchctl load ~/Library/LaunchAgents/com.gbrain.postgres-backup.plist
+  Runs at 03:15 local time. DATABASE_URL and BACKUP_DIR come from backup.env.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.gbrain.postgres-backup</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>set -a &amp;&amp; . /ABSOLUTE/PATH/.gbrain/backup.env &amp;&amp; set +a &amp;&amp; /ABSOLUTE/PATH/gbrain/scripts/local-postgres/backup-nightly.sh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>3</integer>
+    <key>Minute</key>
+    <integer>15</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/Users/YOURUSER/Library/Logs/gbrain-backup.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/YOURUSER/Library/Logs/gbrain-backup.log</string>
+</dict>
+</plist>

@@ -227,20 +227,29 @@ async function chooseSpelling(ctx: Ctx, op: string, params: Params, raw: string,
     const scope = readScope(ctx, op, params);
     const excludePrivate = await resolveExcludePrivatePages(ctx.engine, ctx.remote);
     if (PREFIX_READS.has(op)) {
-      const held: string[] = [];
-      for (const slugPrefix of order) {
-        if ((await ctx.engine.listPages({ slugPrefix, limit: 1, ...scope, excludePrivate })).length > 0) held.push(slugPrefix);
-      }
+      // Independent probes. A transaction-mode pooler cannot pipeline awaited
+      // statements, so a sequential loop pays one round trip per spelling.
+      const hits = await Promise.all(order.map(async slugPrefix =>
+        (await ctx.engine.listPages({ slugPrefix, limit: 1, ...scope, excludePrivate })).length > 0 ? slugPrefix : null));
+      const held = hits.filter((slugPrefix): slugPrefix is string => slugPrefix !== null);
       return held.length > 0 ? { slug: held[0]!, slugs: held } : { slug: normalized, slugs: [normalized] };
     }
     const includeDeleted = params.include_deleted === true;
-    const pages = new Map(await Promise.all(order.map(async slug => [slug, await ctx.engine.getPage(slug, { ...scope, excludePrivate, includeDeleted: true })] as const)));
+    const pageReads = Promise.all(order.map(async slug => [slug, await ctx.engine.getPage(slug, { ...scope, excludePrivate, includeDeleted: true })] as const));
+    // get_page also answers a former slug of a page (an alias), which no row of this name holds.
+    // Run it beside the page reads: on port 6543 each awaited batch is its own round trip.
+    const snapshotReads = op === 'get_page'
+      ? Promise.all(order.map(async slug => [slug, (await ctx.engine.readPageSnapshot(slug, { ...scope, excludePrivate, includeDeleted, resolveAlias: true }))?.page ?? null] as const))
+      : null;
+    // A rejection is awaited below. Mark it handled now so the sibling read
+    // failing too is not an unhandled rejection.
+    pageReads.catch(() => undefined);
+    snapshotReads?.catch(() => undefined);
+    const [pageEntries, snapshotEntries] = await Promise.all([pageReads, snapshotReads ?? Promise.resolve(null)]);
+    const pages = new Map(pageEntries);
     const readable = (page: Page | null | undefined) => page !== null && page !== undefined && !(excludePrivate && isPrivatePageForCaller(page));
     const visible = (slug: string) => readable(pages.get(slug));
-    // get_page also answers a former slug of a page (an alias), which no row of this name holds.
-    const reached = op === 'get_page'
-      ? new Map(await Promise.all(order.map(async slug => [slug, (await ctx.engine.readPageSnapshot(slug, { ...scope, excludePrivate, includeDeleted, resolveAlias: true }))?.page ?? null] as const)))
-      : null;
+    const reached = snapshotEntries ? new Map(snapshotEntries) : null;
     const eligible = (slug: string) => reached ? readable(reached.get(slug)) : visible(slug) && (includeDeleted || !pages.get(slug)!.deleted_at);
     const offered = (slug: string) => [slug, ...order.filter(other => other !== slug && !pages.get(other))];
     // (a) the caller's exact bytes, (b) the lowercased bytes, which is what a read looked up before slugs were composed,

@@ -1,0 +1,22 @@
+;; Transaction-mode pooler in front of a local gbrain database.
+;; Copy, set the password file, and run: pgbouncer /path/to/pgbouncer.ini
+;; This is the shape of Supabase's transaction pooler (port 6543): one server
+;; connection per transaction, no session state between transactions.
+
+[databases]
+gbrain = host=127.0.0.1 port=5432 dbname=gbrain
+
+[pgbouncer]
+listen_addr = 127.0.0.1
+listen_port = 6432
+auth_type = scram-sha-256
+auth_file = /etc/pgbouncer/userlist.txt
+pool_mode = transaction
+max_client_conn = 100
+default_pool_size = 20
+;; postgres.js and libpq send these. Ignoring them keeps the pooler from
+;; rejecting the startup packet. It also means startup GUCs such as
+;; statement_timeout never reach the backend — the same gap as Supabase :6543.
+ignore_startup_parameters = extra_float_digits,options
+admin_users = gbrain
+stats_users = gbrain

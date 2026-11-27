@@ -219,7 +219,16 @@ const get_page: Operation = {
     // retain protected body sections (GST-3058). Holder grants and
     // page-visibility opt-outs do not bypass this boundary.
     const isUntrustedReader = ctx.remote !== false;
-    const visibleBody = isUntrustedReader && page.body_storage !== 'segmented' ? await stripPrivacyFencesForRemoteReader(ctx, page) : page;
+    // These reads do not depend on each other. Start them together: a
+    // transaction-mode pooler (Supabase port 6543) does not pipeline awaited
+    // statements, so each one in series adds a network round trip.
+    const visibleBodyPromise = isUntrustedReader && page.body_storage !== 'segmented'
+      ? stripPrivacyFencesForRemoteReader(ctx, page)
+      : Promise.resolve(page);
+    const heldPromise = readHeldPages(ctx.engine, [page.id], ctx).catch(() => null);
+    const fencePromise = import('../generations/fence.ts').then(m =>
+      m.fenceHoldEntries(ctx.engine, [page.source_id], { slug: page.slug }).catch(() => [])).catch(() => []);
+    const visibleBody = await visibleBodyPromise;
     // v0.42 (#1699) agent-warning channel: surface the page's content_flag
     // marker as a top-level field (parallel to SearchResult.content_flag) so
     // an agent reading a page directly gets the same "this looks odd, examine
@@ -227,7 +236,7 @@ const get_page: Operation = {
     // this is the clean, documented accessor.
     const content_flag = getContentFlag(page.frontmatter as Record<string, unknown> | null);
     // #5988: sync holds the page's newer file (one indexed lookup, fail-open).
-    const held = (await readHeldPages(ctx.engine, [page.id], ctx).catch(() => null))?.get(page.id);
+    const held = (await heldPromise)?.get(page.id);
     // #2225: `content` is the canonical serialized markdown (frontmatter +
     // compiled_truth + `<!-- timeline -->` sentinel + timeline). Clients that
     // edit-and-put_page this field round-trip losslessly; hand-concatenating
@@ -243,7 +252,7 @@ const get_page: Operation = {
     const lineGrammar = p.grammar_diagnostics !== true ? undefined : await (await import('../line-grammar-report.ts')).grammarDiagnosticsForPage(ctx.engine, page, visibleBody);
     const quarantined = readQuarantined(ctx, page, p.include_quarantined === true); // #6259
     unverifiedOriginNotice(ctx, page, readable.trust);
-    const fenceHeld = (await (await import('../generations/fence.ts')).fenceHoldEntries(ctx.engine, [page.source_id], { slug: page.slug }).catch(() => [])).map(({ source_id: _s, slug: _g, ...hold }) => hold); const fileHeld = { ...(held ? { file_held: fileHeldField(held, isUntrustedReader) } : {}), ...(fenceHeld.length ? { fence_held: fenceHeld } : {}) };
+    const fenceHeld = (await fencePromise).map(({ source_id: _s, slug: _g, ...hold }) => hold); const fileHeld = { ...(held ? { file_held: fileHeldField(held, isUntrustedReader) } : {}), ...(fenceHeld.length ? { fence_held: fenceHeld } : {}) };
     const segmented = isSegmentedPage(page);
     // GBRA-217 (B7): a current page not in force today says so; a page with no valid_from / valid_until reads as before.
     const validTime = currentValidTime(page.frontmatter as Record<string, unknown> | null);

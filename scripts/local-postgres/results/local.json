@@ -1,0 +1,126 @@
+{
+  "setup": "local",
+  "host": "127.0.0.1",
+  "port": 5432,
+  "pages": 4000,
+  "chunks": 12000,
+  "dim": 1024,
+  "pg_version": "PostgreSQL 17.12 (Ubuntu 17.12-1.pgdg24.04+1) on x86_64-pc-linux-gnu",
+  "pgvector": "0.8.7",
+  "vector_index": [
+    "hnsw"
+  ],
+  "plans": {
+    "get_page": "Index Scan using pages_source_id_slug_key on pages  (cost=0.28..8.30 rows=1 width=20)",
+    "keyword_rare": "Limit  (cost=225.64..422.55 rows=20 width=4) | ->  Bitmap Heap Scan on content_chunks cc  (cost=225.36..355.55 rows=40 width=4) | ->  Bitmap Index Scan on idx_chunks_search  (cost=0.00..225.35 rows=40 width=0) | ->  Index Scan using pages_pkey on pages p  (cost=0.28..6.60 rows=1 width=4)",
+    "vector": "Limit  (cost=778.01..946.51 rows=40 width=12) | ->  Index Scan using idx_chunks_embedding on content_chunks  (cost=778.01..51328.00 rows=12000 width=12)"
+  },
+  "ops": {
+    "connect_cold": {
+      "n": 5,
+      "median_ms": 4.95,
+      "p95_ms": 5.17,
+      "min_ms": 4.26,
+      "max_ms": 5.17
+    },
+    "ping": {
+      "n": 21,
+      "median_ms": 0.03,
+      "p95_ms": 0.04,
+      "min_ms": 0.03,
+      "max_ms": 0.04
+    },
+    "get_page": {
+      "n": 21,
+      "median_ms": 0.05,
+      "p95_ms": 0.06,
+      "min_ms": 0.05,
+      "max_ms": 0.08
+    },
+    "get_page_serial": {
+      "n": 10,
+      "median_ms": 0.22,
+      "p95_ms": 0.26,
+      "min_ms": 0.21,
+      "max_ms": 0.26
+    },
+    "get_page_overlapped": {
+      "n": 10,
+      "median_ms": 0.28,
+      "p95_ms": 0.41,
+      "min_ms": 0.26,
+      "max_ms": 0.41
+    },
+    "keyword_rare": {
+      "n": 21,
+      "median_ms": 0.57,
+      "p95_ms": 0.82,
+      "min_ms": 0.48,
+      "max_ms": 0.82
+    },
+    "keyword_common": {
+      "n": 8,
+      "median_ms": 7.75,
+      "p95_ms": 7.77,
+      "min_ms": 7.53,
+      "max_ms": 7.77
+    },
+    "vector_search": {
+      "n": 21,
+      "median_ms": 1.73,
+      "p95_ms": 2.03,
+      "min_ms": 1.57,
+      "max_ms": 2.12
+    },
+    "hybrid_db": {
+      "n": 8,
+      "median_ms": 2.08,
+      "p95_ms": 2.89,
+      "min_ms": 1.94,
+      "max_ms": 2.89
+    },
+    "ingest_page": {
+      "n": 8,
+      "median_ms": 4.81,
+      "p95_ms": 5.92,
+      "min_ms": 4.24,
+      "max_ms": 5.92
+    },
+    "config_serial_6": {
+      "n": 21,
+      "median_ms": 0.22,
+      "p95_ms": 0.25,
+      "min_ms": 0.21,
+      "max_ms": 0.27
+    },
+    "config_batched": {
+      "n": 21,
+      "median_ms": 0.05,
+      "p95_ms": 0.05,
+      "min_ms": 0.04,
+      "max_ms": 0.05
+    },
+    "vector_jit_on": {
+      "n": 8,
+      "median_ms": 1.71,
+      "p95_ms": 1.89,
+      "min_ms": 1.51,
+      "max_ms": 1.89
+    },
+    "vector_ef_200": {
+      "n": 8,
+      "median_ms": 3.03,
+      "p95_ms": 3.2,
+      "min_ms": 2.88,
+      "max_ms": 3.2
+    },
+    "vector_seqscan": {
+      "n": 5,
+      "median_ms": 33.24,
+      "p95_ms": 41.46,
+      "min_ms": 32.59,
+      "max_ms": 41.46
+    }
+  },
+  "target_pages": 4000
+}

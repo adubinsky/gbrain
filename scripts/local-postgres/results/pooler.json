@@ -1,0 +1,105 @@
+{
+  "setup": "pooler",
+  "host": "127.0.0.1",
+  "port": 6432,
+  "pages": 4000,
+  "chunks": 12000,
+  "dim": 1024,
+  "pg_version": "PostgreSQL 17.12 (Ubuntu 17.12-1.pgdg24.04+1) on x86_64-pc-linux-gnu",
+  "pgvector": "0.8.7",
+  "vector_index": [
+    "hnsw"
+  ],
+  "plans": {
+    "get_page": "Index Scan using pages_source_id_slug_key on pages  (cost=0.28..8.30 rows=1 width=20)",
+    "keyword_rare": "Limit  (cost=229.89..426.80 rows=20 width=4) | ->  Bitmap Heap Scan on content_chunks cc  (cost=229.61..359.80 rows=40 width=4) | ->  Bitmap Index Scan on idx_chunks_search  (cost=0.00..229.60 rows=40 width=0) | ->  Index Scan using pages_pkey on pages p  (cost=0.28..6.60 rows=1 width=4)",
+    "vector": "Limit  (cost=778.01..946.59 rows=40 width=12) | ->  Index Scan using idx_chunks_embedding on content_chunks  (cost=778.01..51352.00 rows=12000 width=12)"
+  },
+  "ops": {
+    "connect_cold": {
+      "n": 5,
+      "median_ms": 0.26,
+      "p95_ms": 1.6,
+      "min_ms": 0.21,
+      "max_ms": 1.6
+    },
+    "ping": {
+      "n": 21,
+      "median_ms": 0.05,
+      "p95_ms": 0.07,
+      "min_ms": 0.05,
+      "max_ms": 0.07
+    },
+    "get_page": {
+      "n": 21,
+      "median_ms": 0.07,
+      "p95_ms": 0.07,
+      "min_ms": 0.06,
+      "max_ms": 0.07
+    },
+    "get_page_serial": {
+      "n": 10,
+      "median_ms": 0.3,
+      "p95_ms": 0.31,
+      "min_ms": 0.29,
+      "max_ms": 0.31
+    },
+    "get_page_overlapped": {
+      "n": 10,
+      "median_ms": 0.45,
+      "p95_ms": 2.3,
+      "min_ms": 0.35,
+      "max_ms": 2.3
+    },
+    "keyword_rare": {
+      "n": 21,
+      "median_ms": 0.58,
+      "p95_ms": 0.74,
+      "min_ms": 0.53,
+      "max_ms": 0.74
+    },
+    "keyword_common": {
+      "n": 8,
+      "median_ms": 8.26,
+      "p95_ms": 9.51,
+      "min_ms": 8.1,
+      "max_ms": 9.51
+    },
+    "vector_search": {
+      "n": 21,
+      "median_ms": 1.76,
+      "p95_ms": 2.03,
+      "min_ms": 1.57,
+      "max_ms": 2.06
+    },
+    "hybrid_db": {
+      "n": 8,
+      "median_ms": 2.35,
+      "p95_ms": 2.8,
+      "min_ms": 2.01,
+      "max_ms": 2.8
+    },
+    "ingest_page": {
+      "n": 8,
+      "median_ms": 5.94,
+      "p95_ms": 7.84,
+      "min_ms": 4.66,
+      "max_ms": 7.84
+    },
+    "config_serial_6": {
+      "n": 21,
+      "median_ms": 0.37,
+      "p95_ms": 0.39,
+      "min_ms": 0.35,
+      "max_ms": 0.4
+    },
+    "config_batched": {
+      "n": 21,
+      "median_ms": 0.07,
+      "p95_ms": 0.08,
+      "min_ms": 0.07,
+      "max_ms": 0.09
+    }
+  },
+  "target_pages": 4000
+}
