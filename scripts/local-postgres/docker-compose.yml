@@ -1,0 +1,40 @@
+# Local gbrain Postgres on a Mac (Apple Silicon or Intel).
+# The image is multi-arch and includes pgvector.
+#
+#   cp env.example .env   # set POSTGRES_PASSWORD
+#   docker compose up -d
+#   docker compose exec postgres psql -U gbrain -d gbrain -c 'CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+#
+# Listens on 127.0.0.1 only. Agents on other machines should use
+# `gbrain mcp expose` (Tailscale), not this port.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_USER: gbrain
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: gbrain
+    volumes:
+      - gbrain-pgdata:/var/lib/postgresql/data
+    command:
+      - postgres
+      - -c
+      - shared_buffers=1GB
+      - -c
+      - effective_cache_size=4GB
+      - -c
+      - maintenance_work_mem=1GB
+      - -c
+      - max_connections=100
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gbrain -d gbrain"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  gbrain-pgdata:

@@ -162,6 +162,13 @@ export const SECTIONS: DocSection[] = [
         includeInFull: false,
       },
       {
+        title: "docs/guides/local-postgres-mac.md",
+        description:
+          "Run gbrain's Postgres on a Mac mini: Docker, Homebrew, or Postgres.app with pgvector; move a Supabase database with pg_dump; nightly backups; Tailscale; and a benchmark that separates network delay from database time.",
+        path: "docs/guides/local-postgres-mac.md",
+        includeInFull: false,
+      },
+      {
         title: "docs/guides/where-your-memory-lives.md",
         description:
           "The quotable answer to \"database, vector store or Markdown?\": Markdown with frontmatter in a folder you own (normally Git) is the record, Postgres with embeddings and keyword search is a rebuildable index, and database-only records (private pages on strict sources, facts with no page, history, receipts) need a database backup. Where the folder is, mixed vs strict sources, what to back up.",
